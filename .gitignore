@@ -1,0 +1,6 @@
+__pycache__/
+build/
+dist/
+.vscode/
+# Settings and saved sequences when run from source
+.autoclick_config.json

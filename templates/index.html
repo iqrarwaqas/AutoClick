@@ -1,0 +1,717 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>AutoClick</title>
+  <link rel="icon" href="{{ url_for('static', filename='icon.svg') }}" type="image/svg+xml">
+  <script>
+    (function () {
+      var choice = localStorage.getItem("autoclick:theme") || "system";
+      var dark = choice === "dark" || (choice === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
+      document.documentElement.dataset.theme = dark ? "dark" : "light";
+    })();
+  </script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<!-- Icons (Lucide, ISC license) -->
+<svg class="sprite" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+  <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"/><path d="M21 3v5h-5"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></symbol>
+  <symbol id="i-external" viewBox="0 0 24 24"><path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></symbol>
+  <symbol id="i-record" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-pointer" viewBox="0 0 24 24"><path d="m4 4 7.07 17 2.51-7.39L21 11.07z"/></symbol>
+  <symbol id="i-keyboard" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="m7 4 13 8-13 8V4z"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+  <symbol id="i-crosshair" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></symbol>
+  <symbol id="i-eraser" viewBox="0 0 24 24"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></symbol>
+  <symbol id="i-save" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+  <symbol id="i-repeat" viewBox="0 0 24 24"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></symbol>
+  <symbol id="i-grip" viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.2" fill="currentColor" stroke="none"/><circle cx="15" cy="6" r="1.2" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="9" cy="18" r="1.2" fill="currentColor" stroke="none"/><circle cx="15" cy="18" r="1.2" fill="currentColor" stroke="none"/></symbol>
+</svg>
+
+<!-- ============ Top bar ============ -->
+<header class="topbar">
+  <button id="home-btn" class="icon-btn hidden" title="Home"><svg class="ic"><use href="#i-home"/></svg></button>
+  <div class="brand">
+    <img class="brand-logo" src="{{ url_for('static', filename='icon.svg') }}" alt="">
+    <span class="brand-name">AutoClick</span>
+  </div>
+  <nav id="workspaces" class="workspaces hidden" aria-label="Tools">
+    <button data-workspace="recorder" title="Cool-off, record live clicks & keys, and replay N times"><svg class="ic"><use href="#i-record"/></svg>Record &amp; Replay</button>
+    <button data-workspace="clicker" title="Auto-click at cursor, fixed coordinate, or multi-point path"><svg class="ic"><use href="#i-pointer"/></svg>Auto Clicker</button>
+    <button data-workspace="sequences" title="Multi-step keyboard & mouse builder with hold depth and nested repeat groups"><svg class="ic"><use href="#i-layers"/></svg>Sequences</button>
+  </nav>
+  <div class="spacer"></div>
+  <div id="topbar-live" class="topbar-live hidden">
+    <span id="topbar-live-pill" class="live-pill"></span>
+    <button id="topbar-stop" class="btn sm danger"><svg class="ic"><use href="#i-stop"/></svg>Stop</button>
+  </div>
+  <div class="menu-wrap">
+    <button id="menu-btn" class="icon-btn" title="Settings" aria-haspopup="true" aria-expanded="false">
+      <svg class="ic"><use href="#i-settings"/></svg><span id="menu-dot" class="menu-dot hidden"></span>
+    </button>
+    <div id="menu" class="menu hidden" role="menu">
+      <div class="menu-label">Appearance</div>
+      <div id="theme-switch" class="segmented full">
+        <button data-theme-choice="system" title="Follow Windows"><svg class="ic"><use href="#i-monitor"/></svg>System</button>
+        <button data-theme-choice="light"><svg class="ic"><use href="#i-sun"/></svg>Light</button>
+        <button data-theme-choice="dark"><svg class="ic"><use href="#i-moon"/></svg>Dark</button>
+      </div>
+      <div class="menu-sep"></div>
+      <button id="menu-update" class="menu-item" role="menuitem"><svg class="ic"><use href="#i-refresh"/></svg><span>Check for updates</span></button>
+      <button id="menu-export" class="menu-item" role="menuitem"><svg class="ic"><use href="#i-download"/></svg><span>Export sequences…</span></button>
+      <button id="menu-import" class="menu-item" role="menuitem"><svg class="ic"><use href="#i-upload"/></svg><span>Import sequences…</span></button>
+      <input id="import-file" type="file" accept=".json" class="hidden">
+      <div class="menu-sep"></div>
+      <div class="menu-foot">AutoClick · v{{ version }}</div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ Update banner ============ -->
+<div id="update-banner" class="update-banner hidden">
+  <svg class="ic"><use href="#i-download"/></svg>
+  <span id="update-text" class="update-text"></span>
+  <button id="update-install" class="btn primary sm hidden">Update now</button>
+  <a id="update-link" class="btn ghost sm" target="_blank" rel="noopener">Release notes <svg class="ic"><use href="#i-external"/></svg></a>
+  <button id="update-dismiss" class="icon-btn sm" title="Remind me later"><svg class="ic"><use href="#i-x"/></svg></button>
+</div>
+
+<!-- ============ Home screen ============ -->
+<section id="home" class="home-screen">
+  <div class="home-scroll">
+    <div class="home">
+      <header class="home-hero">
+        <div class="hero-logo"><img src="{{ url_for('static', filename='icon.svg') }}" alt=""></div>
+        <h1>What do you want to automate?</h1>
+        <p class="lead">Choose between live recording after a cool-off countdown, a dedicated auto-clicker, or multi-step keyboard &amp; mouse sequences with key press depth and nested loops.</p>
+        <nav class="home-steps" aria-label="Workflow">
+          <button class="step-link recorder" data-mode="recorder"><i></i>1. Cool-off &amp; Record</button>
+          <svg class="ic"><use href="#i-right"/></svg>
+          <button class="step-link clicker" data-mode="clicker"><i></i>2. Auto Clicker</button>
+          <svg class="ic"><use href="#i-right"/></svg>
+          <button class="step-link sequences" data-mode="sequences"><i></i>3. Multi-Step Sequences</button>
+        </nav>
+      </header>
+
+      <div class="tools">
+        <button class="tool recorder" data-mode="recorder">
+          <span class="tool-head"><span class="tool-icon"><svg class="ic"><use href="#i-record"/></svg></span><span class="tool-step">Live Capture</span></span>
+          <span class="tool-title">Record &amp; Replay</span>
+          <span class="tool-sub">Start with a cool-off timer to arrange your scene, record every mouse click and keyboard combo (including hold depth &amp; timing), then replay it for any number of iterations.</span>
+          <span class="tool-badge"><svg class="ic"><use href="#i-clock"/></svg>Cool-off · live record · N× replay</span>
+          <span class="tool-cta">Start Recording<svg class="ic"><use href="#i-arrow-right"/></svg></span>
+        </button>
+
+        <button class="tool clicker" data-mode="clicker">
+          <span class="tool-head"><span class="tool-icon"><svg class="ic"><use href="#i-pointer"/></svg></span><span class="tool-step">Mouse Automation</span></span>
+          <span class="tool-title">Auto Clicker</span>
+          <span class="tool-sub">Automate left, right, or middle clicks at your live cursor, a picked screen point, or a multi-point path with adjustable press hold depth, intervals, and cool-off countdown.</span>
+          <span class="tool-badge"><svg class="ic"><use href="#i-crosshair"/></svg>Cursor · single point · multi-point</span>
+          <span class="tool-cta">Open Auto Clicker<svg class="ic"><use href="#i-arrow-right"/></svg></span>
+        </button>
+
+        <button class="tool sequences" data-mode="sequences">
+          <span class="tool-head"><span class="tool-icon"><svg class="ic"><use href="#i-layers"/></svg></span><span class="tool-step">Full Control</span></span>
+          <span class="tool-title">Multi-Step Sequences</span>
+          <span class="tool-sub">Craft and save multi-step keyboard &amp; mouse tasks with multi-key chords, press hold depth (ms), and nested repeat groups. Includes the v0.5 Copy Tab URLs preset.</span>
+          <span class="tool-badge"><svg class="ic"><use href="#i-keyboard"/></svg>Hotkeys · hold depth · nested groups</span>
+          <span class="tool-cta">Open Sequence Builder<svg class="ic"><use href="#i-arrow-right"/></svg></span>
+        </button>
+      </div>
+
+      <section id="home-presets" class="home-recent">
+        <div class="recent-head">
+          <h2>Saved sequences</h2>
+          <span id="home-preset-count" class="chip"></span>
+        </div>
+        <div class="recent-table-wrap">
+          <table class="recent-table">
+            <thead>
+              <tr><th>Sequence</th><th>Steps &amp; Depth</th><th>Cool-off</th><th>Iterations</th><th class="actions">Actions</th></tr>
+            </thead>
+            <tbody id="home-presets-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <footer class="home-status">
+    <span>Version {{ version }}</span>
+    <span class="sep"></span>
+    <button id="home-update" class="status-btn"><svg class="ic"><use href="#i-refresh"/></svg><span>Check for updates</span></button>
+    <span id="home-update-state" class="status-pill hidden"></span>
+    <div class="spacer"></div>
+    <span id="home-hotkeys"><span class="dim">Emergency Stop:</span> <kbd id="home-stop-key">F8</kbd> · <span class="dim">Record Stop:</span> <kbd id="home-rec-key">F9</kbd></span>
+    <span class="sep"></span>
+    <a href="https://github.com/iqrarwaqas/AutoClick#readme" target="_blank" rel="noopener">Documentation ↗</a>
+  </footer>
+</section>
+
+<!-- ============ Workspace 1: Record & Replay ============ -->
+<section id="recorder" class="workspace hidden">
+  <aside class="panel rail">
+    <div class="panel-head"><span class="panel-title">Record &amp; Replay Setup</span></div>
+    <div class="rail-body">
+      <div class="card">
+        <div class="section-label">1. What to Record</div>
+        <div id="rec-mode" class="segmented full sm mt-8">
+          <button data-rec-mode="both" class="active"><svg class="ic"><use href="#i-layers"/></svg>Both</button>
+          <button data-rec-mode="keyboard"><svg class="ic"><use href="#i-keyboard"/></svg>Keys</button>
+          <button data-rec-mode="mouse"><svg class="ic"><use href="#i-pointer"/></svg>Clicks</button>
+        </div>
+        <div class="field-pair">
+          <label class="field">
+            <span class="field-label">Cool-off (sec)</span>
+            <input id="rec-cooloff" type="number" min="0" max="60" step="0.5" value="5">
+          </label>
+          <label class="field">
+            <span class="field-label">Stop record key</span>
+            <select id="rec-stop-key">
+              <option value="f9">F9</option>
+              <option value="f10">F10</option>
+              <option value="f12">F12</option>
+              <option value="esc">Esc</option>
+              <option value="pause">Pause</option>
+            </select>
+          </label>
+        </div>
+        <p class="hint">Cool-off gives you time to switch to your target window and prepare the scene before capture begins.</p>
+        <label class="switch card-switch">
+          <input id="rec-delays" type="checkbox" checked><span class="track"></span>
+          <span class="switch-text">Capture real timing<small>Records exact pauses &amp; key hold depth (ms)</small></span>
+        </label>
+        <label class="switch card-switch">
+          <input id="rec-minimize" type="checkbox"><span class="track"></span>
+          <span class="switch-text">Minimize window on start<small>Keeps AutoClick out of Alt+Tab order</small></span>
+        </label>
+      </div>
+
+      <div class="card">
+        <div class="section-label">2. Replay Settings</div>
+        <div class="field-pair">
+          <label class="field">
+            <span class="field-label">Replay cool-off (s)</span>
+            <input id="rec-replay-cooloff" type="number" min="0" max="60" step="0.5" value="5">
+          </label>
+          <label class="field">
+            <span class="field-label">Repeat count</span>
+            <input id="rec-iterations" type="number" min="1" max="100000" value="10">
+          </label>
+        </div>
+        <label class="switch card-switch">
+          <input id="rec-infinite" type="checkbox"><span class="track"></span>
+          <span class="switch-text">Loop until stopped<small>Press emergency stop key (<b class="lbl-stop-key">F8</b>) to stop</small></span>
+        </label>
+        <label class="field">
+          <span class="field-label">Playback speed <b id="rec-speed-val" class="val-right">1.0×</b></span>
+          <input id="rec-speed" type="range" min="0.25" max="3" step="0.25" value="1">
+        </label>
+      </div>
+
+      <div class="card">
+        <div class="section-label">3. Save Recorded Task</div>
+        <label class="field">
+          <span class="field-label">Sequence name</span>
+          <input id="rec-save-name" type="text" placeholder="e.g. Daily Form Fill" autocomplete="off">
+        </label>
+        <div class="btn-row mt-8">
+          <button id="rec-save-btn" class="btn sm grow" disabled><svg class="ic"><use href="#i-save"/></svg>Save as Sequence</button>
+          <button id="rec-open-builder" class="btn ghost sm" disabled>Edit in Builder</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="rail-actions">
+      <div class="btn-row">
+        <button id="rec-start" class="btn rec-btn grow"><svg class="ic"><use href="#i-record"/></svg>Start Recording</button>
+        <button id="rec-stop" class="btn danger hidden"><svg class="ic"><use href="#i-stop"/></svg>Stop Rec</button>
+      </div>
+      <div class="btn-row">
+        <button id="rec-replay" class="btn primary grow" disabled><svg class="ic"><use href="#i-play"/></svg>Replay Sequence</button>
+        <button id="rec-pause" class="btn hidden"><svg class="ic"><use href="#i-pause"/></svg>Pause</button>
+        <button id="rec-run-stop" class="btn danger hidden"><svg class="ic"><use href="#i-stop"/></svg>Stop</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="panel overview-panel">
+    <div class="panel-head">
+      <span class="panel-title">Live Status</span>
+      <div class="spacer"></div>
+      <span class="panel-sub">Record stop: <kbd class="lbl-rec-key">F9</kbd> · Emergency stop: <kbd class="lbl-stop-key">F8</kbd></span>
+    </div>
+    <div class="overview-body">
+      <div id="rec-banner" class="callout hidden"></div>
+      <div class="tiles">
+        <div class="tile accent"><b id="rec-t-status">Ready</b><span>Status</span></div>
+        <div class="tile"><b id="rec-t-steps">0</b><span>Captured steps</span></div>
+        <div class="tile ok"><b id="rec-t-iter">0 / 10</b><span>Replay loop</span></div>
+        <div class="tile"><b id="rec-t-time">0.0s</b><span>Timer</span></div>
+      </div>
+      <div class="progress-block">
+        <div class="progress-head"><span id="rec-prog-title">Set your cool-off time and click Start Recording</span><span id="rec-prog-detail" class="muted"></span></div>
+        <div class="progress lg"><div id="rec-prog-bar" class="progress-bar"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel steps-panel">
+    <div class="panel-head">
+      <span class="panel-title">Recorded Multi-Step Actions <span id="rec-count-badge" class="badge">0</span></span>
+      <div class="spacer"></div>
+      <button id="rec-clear" class="btn ghost sm" disabled><svg class="ic"><use href="#i-eraser"/></svg>Clear</button>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table steps-table">
+        <thead>
+          <tr><th>#</th><th>Type</th><th>Action</th><th>Hold Depth</th><th>Delay After</th><th class="col-act"></th></tr>
+        </thead>
+        <tbody id="rec-steps-body"></tbody>
+      </table>
+      <div id="rec-empty" class="list-empty">No steps recorded yet. Click <b>Start Recording</b>, wait for the cool-off timer to finish, perform your clicks &amp; key presses, then press <kbd class="lbl-rec-key">F9</kbd>.</div>
+    </div>
+  </div>
+
+  <div class="panel log-panel">
+    <div class="panel-head">
+      <span class="panel-title">Activity</span>
+      <div class="spacer"></div>
+      <button class="btn ghost sm" data-log-copy="rec-log"><svg class="ic"><use href="#i-copy"/></svg>Copy</button>
+      <button id="rec-log-clear" class="btn ghost sm"><svg class="ic"><use href="#i-eraser"/></svg>Clear</button>
+    </div>
+    <pre id="rec-log" class="activity-log" data-empty="Cool-off countdowns, recorded events, and replay progress show up here."></pre>
+  </div>
+</section>
+
+<!-- ============ Workspace 2: Auto Clicker ============ -->
+<section id="clicker" class="workspace hidden">
+  <aside class="panel rail">
+    <div class="panel-head"><span class="panel-title">Auto Clicker Setup</span></div>
+    <div class="rail-body">
+      <div class="card">
+        <div class="section-label">Target Position</div>
+        <div id="clk-target-mode" class="segmented full sm mt-8">
+          <button data-target="cursor" class="active">Cursor</button>
+          <button data-target="single">Single Point</button>
+          <button data-target="multi">Multi-Point</button>
+        </div>
+        <div id="clk-single-box" class="hidden">
+          <div class="field-pair">
+            <label class="field"><span class="field-label">X (px)</span><input id="clk-x" type="number" placeholder="Auto"></label>
+            <label class="field"><span class="field-label">Y (px)</span><input id="clk-y" type="number" placeholder="Auto"></label>
+          </div>
+          <button id="clk-pick-single" class="btn sm wide mt-8"><svg class="ic"><use href="#i-crosshair"/></svg>Pick point on screen (3s)</button>
+        </div>
+        <div id="clk-multi-box" class="hidden">
+          <p class="hint">Add multiple points to click in sequence each loop.</p>
+          <div class="btn-row mt-8">
+            <button id="clk-pick-multi" class="btn sm grow"><svg class="ic"><use href="#i-crosshair"/></svg>Pick next point (3s)</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-label">Click &amp; Press Depth</div>
+        <div class="field-pair">
+          <label class="field">
+            <span class="field-label">Mouse button</span>
+            <select id="clk-button">
+              <option value="left">Left click</option>
+              <option value="right">Right click</option>
+              <option value="middle">Middle click</option>
+            </select>
+          </label>
+          <label class="field">
+            <span class="field-label">Click type</span>
+            <select id="clk-clicks">
+              <option value="1">Single</option>
+              <option value="2">Double</option>
+              <option value="3">Triple</option>
+            </select>
+          </label>
+        </div>
+        <div class="field-pair">
+          <label class="field">
+            <span class="field-label">Hold depth (ms)</span>
+            <input id="clk-hold" type="number" min="0" max="5000" step="10" value="0" title="How long the mouse button is held down per click">
+          </label>
+          <label class="field">
+            <span class="field-label">Interval (sec)</span>
+            <input id="clk-interval" type="number" min="0.01" max="3600" step="0.05" value="0.5">
+          </label>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-label">Cool-off &amp; Repeats</div>
+        <div class="field-pair">
+          <label class="field">
+            <span class="field-label">Cool-off (sec)</span>
+            <input id="clk-cooloff" type="number" min="0" max="60" step="0.5" value="5">
+          </label>
+          <label class="field">
+            <span class="field-label">Repeat count</span>
+            <input id="clk-iterations" type="number" min="1" max="100000" value="20">
+          </label>
+        </div>
+        <label class="switch card-switch">
+          <input id="clk-infinite" type="checkbox"><span class="track"></span>
+          <span class="switch-text">Click until stopped<small>Press <b class="lbl-stop-key">F8</b> or move mouse to corner</small></span>
+        </label>
+        <button id="clk-save-preset" class="btn ghost sm wide mt-8"><svg class="ic"><use href="#i-save"/></svg>Save clicker setup as Sequence</button>
+      </div>
+    </div>
+
+    <div class="rail-actions">
+      <div class="btn-row">
+        <button id="clk-start" class="btn primary grow"><svg class="ic"><use href="#i-play"/></svg>Start Clicking</button>
+        <button id="clk-pause" class="btn hidden"><svg class="ic"><use href="#i-pause"/></svg>Pause</button>
+        <button id="clk-stop" class="btn danger hidden"><svg class="ic"><use href="#i-stop"/></svg>Stop</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="panel overview-panel">
+    <div class="panel-head">
+      <span class="panel-title">Clicker Status</span>
+      <div class="spacer"></div>
+      <span class="panel-sub">Emergency stop: <kbd class="lbl-stop-key">F8</kbd> or screen corner</span>
+    </div>
+    <div class="overview-body">
+      <div class="tiles">
+        <div class="tile accent"><b id="clk-t-status">Ready</b><span>Status</span></div>
+        <div class="tile ok"><b id="clk-t-iter">0 / 20</b><span>Clicks / Loops</span></div>
+        <div class="tile"><b id="clk-t-step">—</b><span>Current Action</span></div>
+        <div class="tile"><b id="clk-t-time">0.0s</b><span>Elapsed</span></div>
+      </div>
+      <div class="progress-block">
+        <div class="progress-head"><span id="clk-prog-title">Ready to click</span><span id="clk-prog-detail" class="muted"></span></div>
+        <div class="progress lg"><div id="clk-prog-bar" class="progress-bar"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel steps-panel">
+    <div class="panel-head">
+      <span class="panel-title">Click Points <span id="clk-points-badge" class="badge">Cursor</span></span>
+      <div class="spacer"></div>
+      <button id="clk-points-clear" class="btn ghost sm hidden"><svg class="ic"><use href="#i-eraser"/></svg>Clear points</button>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table steps-table">
+        <thead><tr><th>#</th><th>Point</th><th>Button &amp; Depth</th><th>Interval</th><th class="col-act"></th></tr></thead>
+        <tbody id="clk-points-body"></tbody>
+      </table>
+      <div id="clk-points-empty" class="list-empty">Target is set to <b>Current Cursor</b> — wherever your mouse rests after cool-off is where it clicks. Switch to <b>Single Point</b> or <b>Multi-Point</b> to lock exact screen coordinates.</div>
+    </div>
+  </div>
+
+  <div class="panel log-panel">
+    <div class="panel-head">
+      <span class="panel-title">Activity</span>
+      <div class="spacer"></div>
+      <button class="btn ghost sm" data-log-copy="clk-log"><svg class="ic"><use href="#i-copy"/></svg>Copy</button>
+      <button id="clk-log-clear" class="btn ghost sm"><svg class="ic"><use href="#i-eraser"/></svg>Clear</button>
+    </div>
+    <pre id="clk-log" class="activity-log" data-empty="Clicker status and logs show up here."></pre>
+  </div>
+</section>
+
+<!-- ============ Workspace 3: Multi-Step Sequences ============ -->
+<section id="sequences" class="workspace hidden">
+  <aside class="panel rail">
+    <div class="panel-head"><span class="panel-title">Sequence &amp; Run Settings</span></div>
+    <div class="rail-body">
+      <div class="card">
+        <div class="section-label">Saved Sequence</div>
+        <label class="field">
+          <select id="seq-select"></select>
+        </label>
+        <div class="btn-row mt-8">
+          <button id="seq-new" class="btn sm grow"><svg class="ic"><use href="#i-plus"/></svg>New</button>
+          <button id="seq-dup" class="btn sm" title="Duplicate sequence"><svg class="ic"><use href="#i-copy"/></svg></button>
+          <button id="seq-del" class="btn sm" title="Delete sequence"><svg class="ic"><use href="#i-trash"/></svg></button>
+        </div>
+        <label class="field">
+          <span class="field-label">Name</span>
+          <input id="seq-name" type="text" autocomplete="off">
+        </label>
+      </div>
+
+      <div class="card">
+        <div class="section-label">Cool-off &amp; Loops</div>
+        <div class="field-pair">
+          <label class="field">
+            <span class="field-label">Cool-off (sec)</span>
+            <input id="seq-cooloff" type="number" min="0" max="120" step="0.5" value="5">
+          </label>
+          <label class="field">
+            <span class="field-label">Iterations</span>
+            <input id="seq-iterations" type="number" min="1" max="100000" value="15">
+          </label>
+        </div>
+        <label class="switch card-switch">
+          <input id="seq-infinite" type="checkbox"><span class="track"></span>
+          <span class="switch-text">Loop until stopped<small>Repeats forever until <b class="lbl-stop-key">F8</b></small></span>
+        </label>
+        <label class="field">
+          <span class="field-label">Speed <b id="seq-speed-val" class="val-right">1.0×</b></span>
+          <input id="seq-speed" type="range" min="0.25" max="4" step="0.25" value="1">
+        </label>
+      </div>
+
+      <div class="card">
+        <div class="section-label">Safety &amp; Window</div>
+        <label class="field">
+          <span class="field-label">Emergency stop hotkey</span>
+          <select id="set-stop-key">
+            <option value="f8">F8 (recommended)</option>
+            <option value="f9">F9</option>
+            <option value="f10">F10</option>
+            <option value="f12">F12</option>
+            <option value="pause">Pause</option>
+            <option value="esc">Esc</option>
+            <option value="none">Disabled</option>
+          </select>
+        </label>
+        <label class="switch card-switch">
+          <input id="set-failsafe" type="checkbox" checked><span class="track"></span>
+          <span class="switch-text">Corner failsafe<small>Move mouse to any screen corner to abort</small></span>
+        </label>
+        <label class="switch card-switch">
+          <input id="set-minimize" type="checkbox"><span class="track"></span>
+          <span class="switch-text">Minimize window on start<small>Restores when finished; ideal for Alt+Tab</small></span>
+        </label>
+        <button id="seq-reset-v05" class="btn ghost sm wide mt-8"><svg class="ic"><use href="#i-refresh"/></svg>Restore v0.5 Copy Tab URLs preset</button>
+      </div>
+    </div>
+
+    <div class="rail-actions">
+      <div class="btn-row">
+        <button id="seq-start" class="btn primary grow"><svg class="ic"><use href="#i-play"/></svg>Run Sequence</button>
+        <button id="seq-pause" class="btn hidden"><svg class="ic"><use href="#i-pause"/></svg>Pause</button>
+        <button id="seq-stop" class="btn danger hidden"><svg class="ic"><use href="#i-stop"/></svg>Stop</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="panel overview-panel">
+    <div class="panel-head">
+      <span class="panel-title">Run Overview</span>
+      <div class="spacer"></div>
+      <span id="seq-depth-badge" class="badge pending">Depth 1</span>
+    </div>
+    <div class="overview-body">
+      <div class="tiles">
+        <div class="tile accent"><b id="seq-t-status">Ready</b><span>Status</span></div>
+        <div class="tile ok"><b id="seq-t-iter">0 / 15</b><span>Iteration</span></div>
+        <div class="tile"><b id="seq-t-step">—</b><span>Active Step</span></div>
+        <div class="tile"><b id="seq-t-time">0.0s</b><span>Elapsed</span></div>
+      </div>
+      <div class="progress-block">
+        <div class="progress-head"><span id="seq-prog-title">Ready</span><span id="seq-prog-detail" class="muted"></span></div>
+        <div class="progress lg"><div id="seq-prog-bar" class="progress-bar"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel steps-panel">
+    <div class="panel-head">
+      <span class="panel-title">Multi-Step Sequence <span id="seq-step-count" class="badge">0</span></span>
+      <div class="spacer"></div>
+      <button id="seq-add-step" class="btn primary sm"><svg class="ic"><use href="#i-plus"/></svg>Add Step</button>
+      <button id="seq-add-group" class="btn sm"><svg class="ic"><use href="#i-repeat"/></svg>Add Repeat Group</button>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table steps-table">
+        <thead>
+          <tr><th class="col-chk"></th><th>#</th><th>Type</th><th>Action / Sub-steps</th><th>Hold Depth</th><th>Delay</th><th class="col-act">Actions</th></tr>
+        </thead>
+        <tbody id="seq-steps-body"></tbody>
+      </table>
+      <div id="seq-empty" class="list-empty hidden">No steps in this sequence yet. Click <b>Add Step</b> or <b>Add Repeat Group</b> to start building.</div>
+    </div>
+  </div>
+
+  <div class="panel log-panel">
+    <div class="panel-head">
+      <span class="panel-title">Activity</span>
+      <div class="spacer"></div>
+      <button class="btn ghost sm" data-log-copy="seq-log"><svg class="ic"><use href="#i-copy"/></svg>Copy</button>
+      <button id="seq-log-clear" class="btn ghost sm"><svg class="ic"><use href="#i-eraser"/></svg>Clear</button>
+    </div>
+    <pre id="seq-log" class="activity-log" data-empty="Execution progress, nested loop steps, and stop events show up here."></pre>
+  </div>
+</section>
+
+<!-- ============ Step Editor Modal ============ -->
+<div id="step-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="modal-title">Add Step</h2>
+      <button id="modal-close" class="icon-btn sm" title="Close"><svg class="ic"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <span class="field-label">Step Type</span>
+        <div id="m-type" class="segmented full sm">
+          <button data-type="hotkey" class="active">Hotkey</button>
+          <button data-type="key">Key</button>
+          <button data-type="type">Type</button>
+          <button data-type="click">Click</button>
+          <button data-type="wait">Wait</button>
+          <button data-type="group">Repeat Group</button>
+        </div>
+      </div>
+
+      <!-- Hotkey fields -->
+      <div class="m-pane" data-pane="hotkey">
+        <label class="field">
+          <span class="field-label">Key combination <span class="opt">e.g. ctrl+shift+s</span></span>
+          <span class="input-row">
+            <input id="m-keys" type="text" placeholder="ctrl+l" autocomplete="off" spellcheck="false">
+            <button type="button" id="m-capture-keys" class="btn sm">Capture</button>
+          </span>
+        </label>
+        <div class="quick-chips">
+          <button type="button" class="chip-btn" data-quick-keys="ctrl+l">Ctrl+L</button>
+          <button type="button" class="chip-btn" data-quick-keys="ctrl+c">Ctrl+C</button>
+          <button type="button" class="chip-btn" data-quick-keys="ctrl+v">Ctrl+V</button>
+          <button type="button" class="chip-btn" data-quick-keys="alt+tab">Alt+Tab</button>
+          <button type="button" class="chip-btn" data-quick-keys="shift+enter">Shift+Enter</button>
+          <button type="button" class="chip-btn" data-quick-keys="ctrl+w">Ctrl+W</button>
+          <button type="button" class="chip-btn" data-quick-keys="ctrl+shift+t">Ctrl+Shift+T</button>
+        </div>
+      </div>
+
+      <!-- Single key fields -->
+      <div class="m-pane hidden" data-pane="key">
+        <div class="field-pair">
+          <label class="field">
+            <span class="field-label">Key name</span>
+            <input id="m-key" type="text" placeholder="enter, tab, space, down, f5" autocomplete="off">
+          </label>
+          <label class="field">
+            <span class="field-label">Presses</span>
+            <input id="m-presses" type="number" min="1" max="100" value="1">
+          </label>
+        </div>
+      </div>
+
+      <!-- Type text fields -->
+      <div class="m-pane hidden" data-pane="type">
+        <label class="field">
+          <span class="field-label">Text to type</span>
+          <textarea id="m-text" rows="3" placeholder="Text typed into the active window…"></textarea>
+        </label>
+        <label class="field">
+          <span class="field-label">Interval between characters (sec)</span>
+          <input id="m-interval" type="number" min="0" max="2" step="0.01" value="0">
+        </label>
+      </div>
+
+      <!-- Click fields -->
+      <div class="m-pane hidden" data-pane="click">
+        <div class="field-pair">
+          <label class="field"><span class="field-label">X (blank = cursor)</span><input id="m-x" type="number" placeholder="Cursor X"></label>
+          <label class="field"><span class="field-label">Y (blank = cursor)</span><input id="m-y" type="number" placeholder="Cursor Y"></label>
+        </div>
+        <button type="button" id="m-pick-pos" class="btn sm wide mt-8"><svg class="ic"><use href="#i-crosshair"/></svg>Pick position on screen (3s)</button>
+        <div class="field-pair">
+          <label class="field">
+            <span class="field-label">Button</span>
+            <select id="m-button">
+              <option value="left">Left</option>
+              <option value="right">Right</option>
+              <option value="middle">Middle</option>
+            </select>
+          </label>
+          <label class="field">
+            <span class="field-label">Clicks</span>
+            <input id="m-clicks" type="number" min="1" max="5" value="1">
+          </label>
+        </div>
+      </div>
+
+      <!-- Wait fields -->
+      <div class="m-pane hidden" data-pane="wait">
+        <label class="field">
+          <span class="field-label">Wait duration (seconds)</span>
+          <input id="m-seconds" type="number" min="0.01" max="3600" step="0.1" value="1.0">
+        </label>
+      </div>
+
+      <!-- Repeat Group fields -->
+      <div class="m-pane hidden" data-pane="group">
+        <div class="field-pair">
+          <label class="field">
+            <span class="field-label">Group name</span>
+            <input id="m-group-name" type="text" placeholder="e.g. Select & Confirm">
+          </label>
+          <label class="field">
+            <span class="field-label">Repeat count</span>
+            <input id="m-group-repeat" type="number" min="1" max="1000" value="3">
+          </label>
+        </div>
+        <p class="hint">After saving the group, click <b>+ Sub</b> on its row to nest sub-steps inside it (supports multi-step nesting up to 5 levels deep).</p>
+      </div>
+
+      <!-- Shared hold depth + delay + note -->
+      <div id="m-hold-delay-row" class="field-pair">
+        <label id="m-hold-wrap" class="field">
+          <span class="field-label">Press hold depth (ms)</span>
+          <input id="m-hold" type="number" min="0" max="10000" step="10" value="0" title="0 = instant press; >0 holds the key/button down for N milliseconds">
+        </label>
+        <label id="m-delay-wrap" class="field">
+          <span class="field-label">Delay after step (sec)</span>
+          <input id="m-delay" type="number" min="0" max="3600" step="0.05" value="0.1">
+        </label>
+      </div>
+      <label class="field">
+        <span class="field-label">Note <span class="opt">optional</span></span>
+        <input id="m-note" type="text" placeholder="Short description of this step" autocomplete="off">
+      </label>
+    </div>
+    <div class="modal-foot">
+      <button id="modal-cancel" class="btn ghost">Cancel</button>
+      <button id="modal-save" class="btn primary">Save Step</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ Toast ============ -->
+<div id="toast" class="toast hidden" role="status" aria-live="polite">
+  <svg class="ic"><use id="toast-icon" href="#i-check"/></svg>
+  <span id="toast-text"></span>
+</div>
+
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

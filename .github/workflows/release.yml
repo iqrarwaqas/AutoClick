@@ -1,0 +1,55 @@
+name: Release
+
+# Push a version tag to build the Windows installer and publish a GitHub Release:
+#   git tag v1.0.0 && git push origin v1.0.0
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Check the tag matches __version__ in main.py
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          grep -q "^__version__ = \"$VERSION\"$" main.py || {
+            echo "::error::Tag $GITHUB_REF_NAME does not match __version__ in main.py"; exit 1; }
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt pyinstaller
+
+      - name: Build app
+        run: pyinstaller packaging/AutoClick.spec --noconfirm
+
+      # PowerShell, not bash: Git Bash rewrites "/DAppVersion=..." into a file path.
+      - name: Build installer
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          $iscc = (Get-ChildItem "${env:ProgramFiles(x86)}\Inno Setup*\ISCC.exe" | Select-Object -First 1).FullName
+          & $iscc "/DAppVersion=$env:VERSION" installer\AutoClick.iss
+
+      - name: Publish release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SETUP="dist/AutoClick-Setup-$VERSION.exe"
+          # The release may already exist if it was created on the GitHub website.
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "$SETUP" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" "$SETUP" --title "AutoClick $VERSION" --generate-notes
+          fi
